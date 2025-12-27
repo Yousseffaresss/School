@@ -1,0 +1,87 @@
+static void saveAll() {
+        saveListToFile(STUDENT_FILE, students.stream().map(Student::toFileString).toList());
+        saveListToFile(TEACHER_FILE, teachers.stream().map(Teacher::toFileString).toList());
+        saveListToFile(COURSE_FILE, courses.stream().map(Course::toFileString).toList());
+        saveListToFile(ENROLL_FILE, enrollments.stream().map(Enrollment::toFileString).toList());
+    }
+
+    static void loadAll() {
+        // Students
+        List<String> sLines = loadFileLines(STUDENT_FILE);
+        for (String l : sLines) {
+            Student s = Student.fromFileString(l);
+            students.add(s);
+            nextStudentId = Math.max(nextStudentId, s.id + 1);
+        }
+        // Teachers
+        List<String> tLines = loadFileLines(TEACHER_FILE);
+        for (String l : tLines) {
+            Teacher t = Teacher.fromFileString(l);
+            teachers.add(t);
+            nextTeacherId = Math.max(nextTeacherId, t.id + 1);
+        }
+        // Courses
+        List<String> cLines = loadFileLines(COURSE_FILE);
+        for (String l : cLines) {
+            Course c = Course.fromFileString(l);
+            courses.add(c);
+            nextCourseId = Math.max(nextCourseId, c.id + 1);
+        }
+        // Enrollments
+        List<String> eLines = loadFileLines(ENROLL_FILE);
+        for (String l : eLines) {
+            Enrollment e = Enrollment.fromFileString(l);
+            enrollments.add(e);
+            nextEnrollId = Math.max(nextEnrollId, e.id + 1);
+        }
+    }
+
+    static void saveListToFile(String filename, List<String> lines) {
+        try (PrintWriter pw = new PrintWriter(new FileWriter(filename))) {
+            for (String l : lines) pw.println(l);
+        } catch (IOException ex) {
+            System.out.println("Error saving " + filename + " : " + ex.getMessage());
+        }
+    }
+
+    static List<String> loadFileLines(String filename) {
+        ArrayList<String> out = new ArrayList<>();
+        File f = new File(filename);
+        if (!f.exists()) return out;
+        try (BufferedReader br = new BufferedReader(new FileReader(f))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (!line.trim().isEmpty()) out.add(line);
+            }
+        } catch (IOException ex) {
+            System.out.println("Error reading " + filename + " : " + ex.getMessage());
+        }
+        return out;
+    }
+
+    // ---------- Utilities ----------
+    static int readIntSafe() {
+        while (true) {
+            String s = sc.nextLine().trim();
+            try {
+                return Integer.parseInt(s);
+            } catch (NumberFormatException ex) {
+                System.out.print("Enter a valid integer: ");
+            }
+        }
+    }
+
+    static double readDoubleSafe() {
+        while (true) {
+            String s = sc.nextLine().trim();
+            try {
+                return Double.parseDouble(s);
+            } catch (NumberFormatException ex) {
+                System.out.print("Enter a valid number: ");
+            }
+        }
+    }
+}
+    
+
+
