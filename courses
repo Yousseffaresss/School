@@ -1,0 +1,112 @@
+class Course {
+    int id;
+    String title;
+    int teacherId; // teacher who teaches this course (0 if none)
+    String room; // optional
+
+    public Course(int id, String title, int teacherId, String room) {
+        this.id = id;
+        this.title = title;
+        this.teacherId = teacherId;
+        this.room = room;
+    }
+
+    public String toFileString() {
+        return id + "|" + escape(title) + "|" + teacherId + "|" + escape(room);
+    }
+
+    public static Course fromFileString(String line) {
+        String[] p = line.split("\\|", -1);
+        return new Course(Integer.parseInt(p[0]), unescape(p[1]), Integer.parseInt(p[2]), unescape(p[3]));
+    }
+
+    private static String escape(String s) { return s.replace("|", "/|"); }
+    private static String unescape(String s) { return s.replace("/|", "|"); }
+
+    @Override
+    public String toString() {
+        return String.format("ID:%d | %s | TeacherID:%d | Room:%s", id, title, teacherId, room);
+    }
+}
+ static void coursesMenu() {
+        while (true) {
+            System.out.println("\n--- Courses Menu ---");
+            System.out.println("1. Add Course");
+            System.out.println("2. List Courses");
+            System.out.println("3. Search Course by ID");
+            System.out.println("4. Update Course");
+            System.out.println("5. Delete Course");
+            System.out.println("6. Back");
+            System.out.print("Choose: ");
+            String c = sc.nextLine().trim();
+            switch (c) {
+                case "1" -> addCourse();
+                case "2" -> listCourses();
+                case "3" -> searchCourse();
+                case "4" -> updateCourse();
+                case "5" -> deleteCourse();
+                case "6" -> { return; }
+                default -> System.out.println("Invalid.");
+            }
+        }
+    }
+
+    static void addCourse() {
+        System.out.print("Title: ");
+        String title = sc.nextLine();
+        System.out.print("Assign Teacher ID (0 for none): ");
+        int tid = readIntSafe();
+        System.out.print("Room (optional): ");
+        String room = sc.nextLine();
+        Course c = new Course(nextCourseId++, title, tid, room);
+        courses.add(c);
+        System.out.println("Course added: " + c);
+    }
+
+    static void listCourses() {
+        if (courses.isEmpty()) { System.out.println("No courses."); return; }
+        for (Course c : courses) {
+            String teacherName = (c.teacherId == 0) ? "Unassigned" : Optional.ofNullable(findTeacherById(c.teacherId)).map(t -> t.name).orElse("Unknown");
+            System.out.println(c + " | TeacherName:" + teacherName);
+        }
+    }
+
+    static void searchCourse() {
+        System.out.print("Enter course ID: ");
+        int id = readIntSafe();
+        Course c = findCourseById(id);
+        if (c == null) System.out.println("Not found.");
+        else System.out.println(c);
+    }
+
+    static void updateCourse() {
+        System.out.print("Enter course ID to update: ");
+        int id = readIntSafe();
+        Course c = findCourseById(id);
+        if (c == null) { System.out.println("Not found."); return; }
+        System.out.println("Current: " + c);
+        System.out.print("New Title (leave empty keep): ");
+        String t = sc.nextLine();
+        if (!t.isEmpty()) c.title = t;
+        System.out.print("New Teacher ID (leave empty keep): ");
+        String tid = sc.nextLine();
+        if (!tid.isEmpty()) c.teacherId = Integer.parseInt(tid);
+        System.out.print("New Room (leave empty keep): ");
+        String r = sc.nextLine();
+        if (!r.isEmpty()) c.room = r;
+        System.out.println("Updated: " + c);
+    }
+
+    static void deleteCourse() {
+        System.out.print("Enter course ID to delete: ");
+        int id = readIntSafe();
+        boolean removed = courses.removeIf(c -> c.id == id);
+        // remove enrollments associated
+        enrollments.removeIf(e -> e.courseId == id);
+        if (removed) System.out.println("Deleted course and related enrollments.");
+        else System.out.println("No such course.");
+    }
+
+    static Course findCourseById(int id) {
+        return courses.stream().filter(c -> c.id == id).findFirst().orElse(null);
+    }
