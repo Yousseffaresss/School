@@ -1,0 +1,189 @@
+class Student {
+    int id;
+    String name;
+    int age;
+    String gradeLevel; // e.g., 7-A
+    double gpa;
+
+    public Student(int id, String name, int age, String gradeLevel, double gpa) {
+        this.id = id;
+        this.name = name;
+        this.age = age;
+        this.gradeLevel = gradeLevel;
+        this.gpa = gpa;
+    }
+
+    public String toFileString() {
+        // use '|' as delimiter to avoid comma issues
+        return id + "|" + escape(name) + "|" + age + "|" + escape(gradeLevel) + "|" + gpa;
+    }
+
+    public static Student fromFileString(String line) {
+        String[] parts = line.split("\\|", -1);
+        int id = Integer.parseInt(parts[0]);
+        String name = unescape(parts[1]);
+        int age = Integer.parseInt(parts[2]);
+        String gradeLevel = unescape(parts[3]);
+        double gpa = Double.parseDouble(parts[4]);
+        return new Student(id, name, age, gradeLevel, gpa);
+    }
+
+    private static String escape(String s) {
+        return s.replace("|", "/|");
+    }
+
+    private static String unescape(String s) {
+        return s.replace("/|", "|");
+    }
+
+    @Override
+    public String toString() {
+        return String.format("ID:%d | %s | Age:%d | Level:%s | GPA:%.2f", id, name, age, gradeLevel, gpa);
+    }
+}
+ static void studentsMenu() {
+        while (true) {
+            System.out.println("\n--- Students Menu ---");
+            System.out.println("1. Add Student");
+            System.out.println("2. List Students");
+            System.out.println("3. Search Student by ID");
+            System.out.println("4. Update Student");
+            System.out.println("5. Delete Student");
+            System.out.println("6. Back");
+            System.out.print("Choose: ");
+            String c = sc.nextLine().trim();
+            switch (c) {
+                case "1" -> addStudent();
+                case "2" -> listStudents();
+                case "3" -> searchStudent();
+                case "4" -> updateStudent();
+                case "5" -> deleteStudent();
+                case "6" -> { return; }
+                default -> System.out.println("Invalid.");
+            }
+        }
+    }
+
+    static void addStudent() {
+        System.out.print("Name: ");
+        String name = sc.nextLine();
+        System.out.print("Age: ");
+        int age = readIntSafe();
+        System.out.print("Grade Level:  ");
+        String level = sc.nextLine();
+        System.out.print("GPA (0.0 - 4.0): ");
+        double gpa = readDoubleSafe();
+
+        Student s = new Student(nextStudentId++, name, age, level, gpa);
+        students.add(s);
+        System.out.println("Student added: " + s);
+    }
+
+    static void listStudents() {
+        if (students.isEmpty()) { System.out.println("No students."); return; }
+        for (Student s : students) System.out.println(s);
+    }
+
+    static void searchStudent() {
+        System.out.print("Enter student ID: ");
+        int id = readIntSafe();
+        Student s = findStudentById(id);
+        if (s == null) System.out.println("Not found.");
+        else System.out.println(s);
+    }
+
+    static void updateStudent() {
+        System.out.print("Enter student ID to update: ");
+        int id = readIntSafe();
+        Student s = findStudentById(id);
+        if (s == null) { System.out.println("Not found."); return; }
+        System.out.println("Current: " + s);
+        System.out.print("New Name (leave empty keep): ");
+        String name = sc.nextLine();
+        if (!name.isEmpty()) s.name = name;
+        System.out.print("New Age (leave empty keep): ");
+        String a = sc.nextLine();
+        if (!a.isEmpty()) s.age = Integer.parseInt(a);
+        System.out.print("New Grade Level (leave empty keep): ");
+        String lvl = sc.nextLine();
+        if (!lvl.isEmpty()) s.gradeLevel = lvl;
+        System.out.print("New GPA (leave empty keep): ");
+        String g = sc.nextLine();
+        if (!g.isEmpty()) s.gpa = Double.parseDouble(g);
+        System.out.println("Updated: " + s);
+    }
+
+    static void deleteStudent() {
+        System.out.print("Enter student ID to delete: ");
+        int id = readIntSafe();
+        boolean removed = students.removeIf(st -> st.id == id);
+        // also remove enrollments for this student
+        enrollments.removeIf(e -> e.studentId == id);
+        if (removed) System.out.println("Deleted student and related enrollments.");
+        else System.out.println("No such student.");
+    }
+
+    static Student findStudentById(int id) {
+        return students.stream().filter(s -> s.id == id).findFirst().orElse(null);
+    }
+
+    // ---------- Teachers ----------
+    static void teachersMenu() {
+        while (true) {
+            System.out.println("\n--- Teachers Menu ---");
+            System.out.println("1. Add Teacher");
+            System.out.println("2. List Teachers");
+            System.out.println("3. Search Teacher by ID");
+            System.out.println("4. Update Teacher");
+            System.out.println("5. Delete Teacher");
+            System.out.println("6. Back");
+            System.out.print("Choose: ");
+            String c = sc.nextLine().trim();
+            switch (c) {
+                case "1" -> addTeacher();
+                case "2" -> listTeachers();
+                case "3" -> searchTeacher();
+                case "4" -> updateTeacher();
+                case "5" -> deleteTeacher();
+                case "6" -> { return; }
+                default -> System.out.println("Invalid.");
+            }
+        }
+    }
+    static void studentTranscript() {
+        System.out.print("Enter student ID: ");
+        int sid = readIntSafe();
+        Student s = findStudentById(sid);
+        if (s == null) { System.out.println("No such student."); return; }
+        System.out.println("Transcript for " + s.name);
+        boolean any = false;
+        for (Enrollment e : enrollments) {
+            if (e.studentId == sid) {
+                Course c = findCourseById(e.courseId);
+                String cname = (c == null) ? "UnknownCourse" : c.title;
+                String g = (e.grade < 0) ? "N/A" : String.format("%.2f", e.grade);
+                System.out.println("Course: " + cname + " | Grade: " + g);
+                any = true;
+            }
+        }
+        if (!any) System.out.println("No enrollments for this student.");
+    }
+
+    static void studentsInCourse() {
+        System.out.print("Enter course ID: ");
+        int cid = readIntSafe();
+        Course c = findCourseById(cid);
+        if (c == null) { System.out.println("No such course."); return; }
+        System.out.println("Students in " + c.title);
+        boolean any = false;
+        for (Enrollment e : enrollments) {
+            if (e.courseId == cid) {
+                Student s = findStudentById(e.studentId);
+                String sname = (s == null) ? "UnknownStudent" : s.name;
+                String g = (e.grade < 0) ? "N/A" : String.format("%.2f", e.grade);
+                System.out.println("StudentID:" + e.studentId + " | " + sname + " | Grade:" + g);
+                any = true;
+            }
+        }
+        if (!any) System.out.println("No students enrolled in this course.");
+    }
